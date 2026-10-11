@@ -3,52 +3,94 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Portfolio</title>
+    <title>Creative 3D Portfolio</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="hero">
-      <div class="container">
-        <h1>Your Name</h1>
-        <p class="subtitle">Full-Stack Developer</p>
+    <div class="bg-glow bg-glow-1" aria-hidden="true"></div>
+    <div class="bg-glow bg-glow-2" aria-hidden="true"></div>
+
+    <header class="hero container">
+      <div class="hero-copy">
+        <p class="tag">CREATIVE PORTFOLIO</p>
+        <h1>Build dreamy, interactive experiences.</h1>
+        <p class="subtitle">
+          A Pinterest-inspired visual portfolio with layered 3D motion and
+          playful interactions.
+        </p>
+        <a class="cta" href="#works">Explore Works</a>
+      </div>
+      <div class="hero-visual" data-tilt>
+        <article class="float-card card-a">
+          <p>UI Concepts</p>
+          <strong>36 ideas</strong>
+        </article>
+        <article class="float-card card-b">
+          <p>3D Web Scenes</p>
+          <strong>12 demos</strong>
+        </article>
+        <article class="float-card card-c">
+          <p>Client Projects</p>
+          <strong>24 launches</strong>
+        </article>
       </div>
     </header>
 
     <main class="container">
-      <section>
-        <h2>About Me</h2>
+      <section class="about">
+        <h2>About</h2>
         <p>
-          I build clean, user-focused web applications. Replace this paragraph
-          with a short summary about your skills, interests, and experience.
+          I design bold digital products that blend storytelling, interaction,
+          and immersive visuals. This layout is fully editable for your own
+          projects and style.
         </p>
       </section>
 
-      <section>
-        <h2>Projects</h2>
-        <div class="projects">
-          <article class="card">
-            <h3>Project One</h3>
-            <p>Short description of what this project does and why it matters.</p>
+      <section id="works">
+        <h2>Visual Projects</h2>
+        <div class="masonry">
+          <article class="pin pin-lg" data-tilt>
+            <span>Brand Space</span>
+            <h3>Interactive Campaign Landing</h3>
+            <p>Scroll-driven scenes with transitions and rich motion details.</p>
           </article>
-          <article class="card">
-            <h3>Project Two</h3>
-            <p>Short description of your role, tech stack, and outcomes.</p>
+          <article class="pin" data-tilt>
+            <span>Product</span>
+            <h3>Mobile Commerce UI</h3>
+            <p>Colorful card system optimized for discovery and conversion.</p>
           </article>
-          <article class="card">
-            <h3>Project Three</h3>
-            <p>Short description with a key result or interesting challenge.</p>
+          <article class="pin pin-xl" data-tilt>
+            <span>3D</span>
+            <h3>WebGL Product Story</h3>
+            <p>Immersive product reveal with cinematic camera movement.</p>
+          </article>
+          <article class="pin" data-tilt>
+            <span>UX Lab</span>
+            <h3>Microinteraction Library</h3>
+            <p>Reusable gestures, states, and playful motion components.</p>
+          </article>
+          <article class="pin pin-md" data-tilt>
+            <span>Social</span>
+            <h3>Creator Profile Revamp</h3>
+            <p>Pinterest-style discovery flow with richer content cards.</p>
+          </article>
+          <article class="pin" data-tilt>
+            <span>Identity</span>
+            <h3>Portfolio Branding Kit</h3>
+            <p>Typography, moodboards, and animation directions.</p>
           </article>
         </div>
       </section>
 
-      <section>
+      <section class="contact-wrap">
         <h2>Contact</h2>
         <ul class="contact">
           <li>Email: <a href="mailto:you@example.com">you@example.com</a></li>
-          <li>GitHub: <a href="#">github.com/your-username</a></li>
-          <li>LinkedIn: <a href="#">linkedin.com/in/your-name</a></li>
+          <li>Dribbble: <a href="#">dribbble.com/your-name</a></li>
+          <li>Behance: <a href="#">behance.net/your-name</a></li>
         </ul>
       </section>
     </main>
+    <script src="script.js"></script>
   </body>
 </html>

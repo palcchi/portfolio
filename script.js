@@ -1,17 +1,67 @@
-const tiltElements = document.querySelectorAll("[data-tilt]");
+const $ = (selector, root = document) => root.querySelector(selector);
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const STORAGE_KEY = "palcchi-portfolio-projects-v1";
+const PROFILE_KEY = "palcchi-portfolio-profile-v1";
+// Front-end prototype only. This PIN is visible in source; it is not secure authentication.
+const ADMIN_PIN = "change-this-pin";
+const defaultProjects = [
+ {id:"passflow",title:"PassFlow — Event Management",category:"Product",description:"An event operations concept bringing ticket claims, QR check-in, and event identity into one streamlined workflow.",image:"https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1100&q=85",link:"https://passflow.my.id",tags:["Product design","SaaS","QR workflow"],featured:true,year:"2026"},
+ {id:"interface-lab",title:"Interface Lab",category:"UI/UX",description:"A small collection of clean interface studies, component explorations, and visual systems.",image:"https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=1100&q=85",link:"",tags:["UI/UX","Design system"],featured:true,year:"2026"},
+ {id:"digital-garden",title:"Digital Garden",category:"Experiments",description:"A playful visual study of organic shapes, colour, and motion for the web.",image:"https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1100&q=85",link:"",tags:["Creative coding","Motion"],featured:false,year:"2026"},
+ {id:"commerce-concept",title:"Commerce, Reimagined",category:"UI/UX",description:"A product browsing concept focused on confident choices and a calm shopping experience.",image:"https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=1100&q=85",link:"",tags:["E-commerce","Prototyping"],featured:false,year:"2025"},
+ {id:"web-experiment",title:"Shape Studies / 01",category:"Experiments",description:"An ongoing set of experiments with geometry, depth, and tiny interactive details.",image:"https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1100&q=85",link:"",tags:["Visual study","3D"],featured:false,year:"2025"},
+ {id:"brand-playground",title:"Brand Playground",category:"Product",description:"Early directions for a digital-first identity system built to feel simple and memorable.",image:"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1100&q=85",link:"",tags:["Branding","Art direction"],featured:false,year:"2025"}
+];
+const defaultProfile = {intro:"I like turning loose ideas into digital things people can actually use. From product concepts to playful web experiments, this space grows with every new thing I learn.",email:"hello@example.com",availability:"Open to interesting ideas"};
+let projects = loadProjects();
+let profile = loadProfile();
+let activeFilter = "All";
+let searchTerm = "";
+let toastTimer;
 
-tiltElements.forEach((element) => {
-  element.addEventListener("mousemove", (event) => {
-    const rect = element.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const rotateX = ((y / rect.height) - 0.5) * -8;
-    const rotateY = ((x / rect.width) - 0.5) * 8;
-
-    element.style.transform = `perspective(900px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`;
-  });
-
-  element.addEventListener("mouseleave", () => {
-    element.style.transform = "";
-  });
-});
+function loadProjects(){try{const saved=localStorage.getItem(STORAGE_KEY);if(saved){const parsed=JSON.parse(saved);if(Array.isArray(parsed))return parsed;}}catch(e){console.warn("Could not read saved projects",e)}return structuredClone(defaultProjects)}
+function loadProfile(){try{return {...defaultProfile,...JSON.parse(localStorage.getItem(PROFILE_KEY)||"{}")}}catch(e){return {...defaultProfile}}}
+function persistProjects(){localStorage.setItem(STORAGE_KEY,JSON.stringify(projects))}
+function persistProfile(){localStorage.setItem(PROFILE_KEY,JSON.stringify(profile))}
+function escapeHTML(value=""){return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}
+function safeURL(value){try{const url=new URL(value);return ["http:","https:"].includes(url.protocol)?url.href:""}catch{return ""}}
+function placeholderCover(title,category){const palettes={Product:["#d8caff","#3d315d"],"UI/UX":["#c8dfb9","#344832"],Experiments:["#ffc2a8","#7c382b"]};const [bg,fg]=palettes[category]||palettes.Product;const label=escapeHTML(title.slice(0,22));return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="800" height="600" fill="'+bg+'"/><circle cx="590" cy="160" r="160" fill="'+fg+'" opacity=".12"/><path d="M0 470 280 250l180 150 170-220 170 100v320H0Z" fill="'+fg+'" opacity=".15"/><text x="54" y="490" fill="'+fg+'" font-family="Arial,sans-serif" font-size="48" font-weight="700">'+label+'</text><text x="56" y="535" fill="'+fg+'" opacity=".7" font-family="Arial,sans-serif" font-size="17" letter-spacing="4">'+escapeHTML(category.toUpperCase())+'</text></svg>')}
+function projectImage(project){return safeURL(project.image)||placeholderCover(project.title,project.category)}
+function renderProjects(){
+ const filtered=projects.filter(project=>(activeFilter==="All"||project.category===activeFilter)&&[project.title,project.description,project.category,...(project.tags||[])].join(" ").toLowerCase().includes(searchTerm.toLowerCase()));
+ $("#projectCount").textContent=String(projects.length).padStart(2,"0");
+ $("#resultsLabel").textContent=searchTerm||activeFilter!=="All"?filtered.length+" matching project"+(filtered.length===1?"":"s"):"A few things worth a closer look.";
+ $("#projectGrid").innerHTML=filtered.map((p,index)=>{const href=safeURL(p.link);const tags=(p.tags||[]).filter(Boolean).slice(0,4).map(tag=>'<span>'+escapeHTML(tag)+'</span>').join("");const card='<article class="project-card" style="animation-delay:'+Math.min(index*45,240)+'ms"><div class="project-visual" style="--ratio:'+(index%3===0?"1.22":index%3===1?"1.05":"1.32")+'">'+(p.featured?'<span class="featured-badge">✳ FEATURED</span>':'')+'<img src="'+projectImage(p)+'" alt="'+escapeHTML(p.title)+' cover" loading="lazy" onerror="this.onerror=null;this.src=placeholderCover(\''+escapeHTML(p.title).replace(/'/g,"&#39;")+'\',\''+escapeHTML(p.category)+'\')"><div class="visual-overlay"><span>'+escapeHTML(p.category)+' · '+escapeHTML(p.year||"2026")+'</span>'+(href?'<span class="visual-arrow">↗</span>':'')+'</div></div><div class="project-info"><div class="project-meta"><span class="category-tag">'+escapeHTML(p.category)+'</span><span class="project-year">'+escapeHTML(p.year||"2026")+'</span></div><h3 class="project-title">'+escapeHTML(p.title)+'</h3><p class="project-description">'+escapeHTML(p.description)+'</p>'+(tags?'<div class="project-tags">'+tags+'</div>':'')+(href?'<a class="project-open" href="'+href+'" target="_blank" rel="noopener noreferrer" aria-label="Open '+escapeHTML(p.title)+'" style="display:inline-block;margin-top:10px;font-size:10px;text-decoration:underline;text-underline-offset:3px">Explore project ↗</a>':'')+'</div></article>';return card}).join("");
+ $("#emptyState").hidden=filtered.length>0;
+ $("#projectGrid").hidden=filtered.length===0;
+}
+function renderAdminList(){
+ $("#adminProjectList").innerHTML=projects.map(p=>'<div class="admin-project-row"><img class="admin-thumb" src="'+projectImage(p)+'" alt="" onerror="this.style.visibility=\'hidden\'"><div class="admin-project-row-copy"><strong>'+escapeHTML(p.title)+'</strong><span>'+escapeHTML(p.category)+(p.featured?" · Featured":"")+'</span></div><div class="row-actions"><button class="small-action" data-edit="'+escapeHTML(p.id)+'" type="button">Edit</button><button class="small-action delete" data-delete="'+escapeHTML(p.id)+'" type="button">Delete</button></div></div>').join("")||'<p>No projects yet. Add your first one.</p>';
+}
+function showToast(message){const toast=$("#toast");toast.textContent=message;toast.classList.add("visible");clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove("visible"),2600)}
+function openAdmin(){ $("#adminModal").hidden=false;document.body.style.overflow="hidden";$("#adminPin").focus()}
+function closeAdmin(){ $("#adminModal").hidden=true;document.body.style.overflow=""; }
+function unlockAdmin(){ $("#adminLogin").hidden=true;$("#adminWorkspace").hidden=false;renderAdminList();fillProfileForm(); }
+function lockAdmin(){ $("#adminLogin").hidden=false;$("#adminWorkspace").hidden=true;$("#adminPin").value="";$("#loginError").textContent=""; }
+function resetProjectForm(){ $("#projectForm").reset();$("#editId").value="";$("#projectFormTitle").textContent="New project";$("#projectSaveNotice").textContent="";$("#projectForm").hidden=true; }
+function editProject(id){const p=projects.find(item=>item.id===id);if(!p)return;$("#editId").value=p.id;$("#projectTitle").value=p.title;$("#projectCategory").value=p.category;$("#projectDescription").value=p.description;$("#projectImage").value=p.image||"";$("#projectLink").value=p.link||"";$("#projectTags").value=(p.tags||[]).join(", ");$("#projectFeatured").checked=!!p.featured;$("#projectFormTitle").textContent="Edit project";$("#projectForm").hidden=false;$("#projectForm").scrollIntoView({behavior:"smooth",block:"start"});$("#projectTitle").focus();}
+function exportBackup(){const payload={version:1,exportedAt:new Date().toISOString(),projects,profile};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="palcchi-portfolio-backup.json";a.click();URL.revokeObjectURL(url);showToast("Portfolio backup exported")}
+function fillProfileForm(){$("#profileIntro").value=profile.intro;$("#profileEmail").value=profile.email;$("#profileAvailability").value=profile.availability}
+$("#year").textContent=new Date().getFullYear();
+$("#projectGrid").addEventListener("click",event=>{const link=event.target.closest("a");if(link)return;});
+$("#searchInput").addEventListener("input",event=>{searchTerm=event.target.value;renderProjects()});
+$("#filters").addEventListener("click",event=>{const button=event.target.closest("[data-filter]");if(!button)return;activeFilter=button.dataset.filter;$$(".filter-chip").forEach(chip=>chip.classList.toggle("selected",chip===button));renderProjects()});
+$("#resetFilters").addEventListener("click",()=>{activeFilter="All";searchTerm="";$("#searchInput").value="";$$(".filter-chip").forEach(chip=>chip.classList.toggle("selected",chip.dataset.filter==="All"));renderProjects()});
+$("#openAdmin").addEventListener("click",openAdmin);$("#closeAdmin").addEventListener("click",closeAdmin);$("#adminModal").addEventListener("click",event=>{if(event.target===$("#adminModal"))closeAdmin()});document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("#adminModal").hidden)closeAdmin()});
+$("#loginForm").addEventListener("submit",event=>{event.preventDefault();if($("#adminPin").value===ADMIN_PIN){unlockAdmin()}else{$("#loginError").textContent="That PIN doesn't match. Try again."}});
+$("#lockAdmin").addEventListener("click",lockAdmin);
+$("#newProject").addEventListener("click",()=>{resetProjectForm();$("#projectForm").hidden=false;$("#projectForm").scrollIntoView({behavior:"smooth",block:"start"});$("#projectTitle").focus()});
+$("#cancelEdit").addEventListener("click",resetProjectForm);
+$("#adminProjectList").addEventListener("click",event=>{const edit=event.target.closest("[data-edit]");const del=event.target.closest("[data-delete]");if(edit)editProject(edit.dataset.edit);if(del){const project=projects.find(p=>p.id===del.dataset.delete);if(project&&confirm('Delete "'+project.title+'"?')){projects=projects.filter(p=>p.id!==del.dataset.delete);persistProjects();renderAdminList();renderProjects();resetProjectForm();showToast("Project deleted")}}});
+$("#projectForm").addEventListener("submit",event=>{event.preventDefault();const existingId=$("#editId").value;const old=projects.find(p=>p.id===existingId);const title=$("#projectTitle").value.trim();const project={id:existingId||("project-"+Date.now()),title,category:$("#projectCategory").value,description:$("#projectDescription").value.trim(),image:$("#projectImage").value.trim(),link:$("#projectLink").value.trim(),tags:$("#projectTags").value.split(",").map(tag=>tag.trim()).filter(Boolean).slice(0,8),featured:$("#projectFeatured").checked,year:old?.year||String(new Date().getFullYear())};if(project.image&&!safeURL(project.image)){showToast("Please enter a valid public image URL");return}if(project.link&&!safeURL(project.link)){showToast("Please enter a valid project URL");return}if(old)projects=projects.map(p=>p.id===existingId?project:p);else projects.unshift(project);try{persistProjects();renderAdminList();renderProjects();resetProjectForm();showToast(old?"Project updated":"Project added")}catch(error){$("#projectSaveNotice").textContent="Could not save. Browser storage may be full."}});
+$("#exportData").addEventListener("click",exportBackup);$("#downloadBackup").addEventListener("click",exportBackup);
+$("#importBackup").addEventListener("change",async event=>{const file=event.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());const imported=Array.isArray(parsed)?parsed:parsed.projects;if(!Array.isArray(imported)||!imported.every(p=>p&&typeof p.title==="string"&&typeof p.id==="string"))throw new Error("Invalid project backup");if(!confirm("Replace the current project list with "+imported.length+" projects from this backup?"))return;projects=imported;persistProjects();if(parsed.profile&&typeof parsed.profile==="object"){profile={...defaultProfile,...parsed.profile};persistProfile();fillProfileForm()}renderAdminList();renderProjects();showToast("Backup imported")}catch(error){showToast("That backup file isn't valid")}finally{event.target.value=""}});
+$("#profileForm").addEventListener("submit",event=>{event.preventDefault();profile={intro:$("#profileIntro").value.trim(),email:$("#profileEmail").value.trim(),availability:$("#profileAvailability").value.trim()};try{persistProfile();$("#profileSaveNotice").textContent="Profile saved in this browser.";renderProfile();showToast("Profile updated")}catch(error){$("#profileSaveNotice").textContent="Could not save profile."}});
+$$(".admin-tab").forEach(button=>button.addEventListener("click",()=>{$$(".admin-tab").forEach(tab=>tab.classList.toggle("active",tab===button));$$(".admin-tab-content").forEach(content=>content.hidden=content.id!==button.dataset.tab)}));
+function renderProfile(){const email=profile.email||"hello@example.com";$("#contactEmail").textContent=email+" ↗";$("#contactEmail").href="mailto:"+email;$(".hero-description").textContent=profile.intro||defaultProfile.intro;$(".availability").innerHTML='<span class="availability-dot"></span> '+escapeHTML(profile.availability||defaultProfile.availability)}
+renderProfile();renderProjects();
